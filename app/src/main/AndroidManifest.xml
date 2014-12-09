@@ -16,6 +16,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <receiver
+            android:name=".ScheduledCheckReceiver"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="com.simonsickle.intent.action.REGISTER_ALARM" />
+                <action android:name="com.simonsickle.intent.action.CANCEL_ALARM" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".ScheduledCheckService"
+            android:enabled="true" />
     </application>
 
 </manifest>

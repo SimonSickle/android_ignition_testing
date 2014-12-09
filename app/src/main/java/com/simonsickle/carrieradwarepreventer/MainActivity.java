@@ -2,6 +2,7 @@ package com.simonsickle.carrieradwarepreventer;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
@@ -13,54 +14,68 @@ import android.widget.TextView;
 
 
 public class MainActivity extends ActionBarActivity {
-    // The package name of the "malware" is com.LogiaGroup.LogiaDeck
-    private final String malwarePackageName = "com.LogiaGroup.LogiaDeck";
+    public final String PREFS_NAME = "ignition_malware";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if (detectIfAffected()) {
-            Button btnFix = (Button) findViewById(R.id.btnFix);
-            TextView txtInfo = (TextView) findViewById(R.id.txtInformation);
-            btnFix.setVisibility(View.VISIBLE);
-            txtInfo.setTextColor(Color.RED);
-            txtInfo.setText("Infected! Click Fix It and then disable.");
+        //Set instance of package manager
+        PackageManager pm = getPackageManager();
 
-            // Button is clicked
-            btnFix.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try {
-                        //Open the specific App Info page to allow disable
-                        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                        intent.setData(Uri.parse("package:" + malwarePackageName));
-                        startActivity(intent);
-                    } catch (ActivityNotFoundException e) {
-                        e.printStackTrace();
+        try {
+            pm.getPackageInfo(getString(R.string.malware_name), PackageManager.GET_ACTIVITIES);
+            if (pm.getPackageInfo(getString(R.string.malware_name), PackageManager.GET_META_DATA).applicationInfo.enabled) {
+                Button btnFix = (Button) findViewById(R.id.btnFix);
+                TextView txtInfo = (TextView) findViewById(R.id.txtInformation);
+                btnFix.setVisibility(View.VISIBLE);
+                txtInfo.setTextColor(Color.RED);
+                txtInfo.setText(getString(R.string.infected_enabled));
+
+                // Button is clicked
+                btnFix.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
+                        editor.putBoolean("user_disabled_before", true);
+                        editor.apply();
+
+                        try {
+                            //Open the specific App Info page to allow disable
+                            Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            intent.setData(Uri.parse("package:" + getString(R.string.malware_name)));
+                            startActivity(intent);
+                        } catch (ActivityNotFoundException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
-            });
-        } else {
+                });
+            } else {
+                //Save to shared prefs
+                SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
+                editor.putBoolean("user_disabled_before", true);
+                editor.apply();
+
+                //Update GUI
+                Button btnFix = (Button) findViewById(R.id.btnFix);
+                TextView txtInfo = (TextView) findViewById(R.id.txtInformation);
+                btnFix.setVisibility(View.GONE);
+                txtInfo.setTextColor(Color.RED);
+                txtInfo.setText(getString(R.string.infected_disabled));
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            //If were here, no package matches that name
             Button btnFix = (Button) findViewById(R.id.btnFix);
             TextView txtInfo = (TextView) findViewById(R.id.txtInformation);
             btnFix.setVisibility(View.GONE);
-            txtInfo.setText("You are not infected. Give your carrier a high five!");
+            txtInfo.setText(getString(R.string.not_infected));
         }
 
-    }
+        //On open, call the intent
+        Intent intent = new Intent(getApplicationContext(), ScheduledCheckReceiver.class);
+        intent.setAction("com.simonsickle.intent.action.RegisterAlarm");
+        sendBroadcast(intent);
 
-    // detect if affected
-    private boolean detectIfAffected() {
-        PackageManager pm = getPackageManager();
-        boolean app_installed;
-        try {
-            pm.getPackageInfo(malwarePackageName, PackageManager.GET_ACTIVITIES);
-            app_installed = true;
-        } catch (PackageManager.NameNotFoundException e) {
-            app_installed = false;
-        }
-        return app_installed;
     }
 }

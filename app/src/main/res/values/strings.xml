@@ -3,5 +3,10 @@
 
     <string name="app_name">Ignition Test</string>
     <string name="btnFixProblem">Click Here To Fix</string>
-
+    <string name="malware_name">com.LogiaGroup.LogiaDeck</string>
+    <string name="infected_enabled">Infected! Click Fix It and then disable.</string>
+    <string name="infected_disabled">You are infected, but app is disabled.</string>
+    <string name="not_infected">You are not infected. Give your carrier a cookie!</string>
+    <string name="notification_title">Warning: Malware</string>
+    <string name="notification_content">DT Turbine has been re-enabled!</string>
 </resources>
